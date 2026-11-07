@@ -5,7 +5,7 @@
 </style></head><body>
 <header><div class="brand">◈ &nbsp; JOB SEARCH <span>/ SINGAPORE</span></div><small>Malaysia → Singapore &nbsp; • &nbsp; Career transition 2027</small></header>
 <main class="shell"><div class="intro"><div><div class="eyebrow">Your next chapter, organised</div><h1>Application command centre</h1><p>A clear view of what happened. A focused plan for what’s next.</p></div><span class="badge">V1 · Baseline audited 7 Nov 2026</span></div>
-<div id="storageWarning" role="alert"></div><section class="kpis" aria-label="Application overview" id="kpis"></section>
+<div id="storageWarning" role="alert"></div><div id="syncNotice" class="note" role="status">Checking for new opportunities…</div><section class="kpis" aria-label="Application overview" id="kpis"></section>
 <div class="grid"><section class="panel"><div class="sectionhead"><div><h2>Application database</h2><p class="note">Confirmed history and opportunities to verify, kept distinct.</p></div><button class="primary" id="add">+ Add record</button></div>
 <div class="toolbar"><input id="search" type="search" aria-label="Search applications" placeholder="Search company, role, notes…"><select id="statusFilter" aria-label="Filter status"></select><select id="visaFilter" aria-label="Filter sponsorship"></select></div><div class="tablewrap"><table><thead><tr><th>Company / role</th><th>Application status</th><th>Sponsorship evidence</th><th>Manage</th></tr></thead><tbody id="rows"></tbody></table></div><div id="empty" class="empty" hidden>No records match. Try another filter or add a record.</div>
 <div class="footer"><span id="count"></span><div class="backup"><button id="json">Export JSON</button><button id="csv">Export CSV</button><button id="import">Import JSON / CSV</button><input type="file" id="file" accept=".json,.csv,application/json,text/csv" hidden></div></div></section>
@@ -50,4 +50,35 @@ $('#json').onclick=()=>download(JSON.stringify({schemaVersion:1,records},null,2)
 function parseCSV(s){s=s.replace(/^\ufeff/,'');let rows=[],row=[],cell='',quoted=false;for(let i=0;i<s.length;i++){let c=s[i];if(c==='"'){if(quoted&&s[i+1]==='"'){cell+='"';i++}else if(!quoted&&cell!=='')throw Error('Malformed CSV quoting.');else quoted=!quoted;}else if(c===','&&!quoted){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&s[i+1]==='\n')i++;row.push(cell);if(row.some(Boolean))rows.push(row);row=[];cell=''}else cell+=c}if(quoted)throw Error('Unclosed CSV quote.');row.push(cell);if(row.some(Boolean))rows.push(row);if(!rows.length)throw Error('Empty CSV.');let headers=rows.shift();if(new Set(headers).size!==headers.length||!['company','role','status','visa'].every(f=>headers.includes(f)))throw Error('CSV requires company, role, status and visa headers.');return rows.map(r=>{if(r.length!==headers.length)throw Error('CSV column count mismatch.');return Object.fromEntries(headers.map((f,i)=>[f,r[i].replace(/^'(?=[=+@\-\t\r])/,'')]))})}
 $('#import').onclick=()=>$('#file').click();$('#file').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{if(file.size>5e6)throw Error('Maximum file size is 5 MB.');let raw=await file.text(),parsed=file.name.toLowerCase().endsWith('.csv')?parseCSV(raw):JSON.parse(raw);if(!Array.isArray(parsed)){if(parsed.schemaVersion!==1)throw Error('Unsupported backup version.');parsed=parsed.records}let next=validate(parsed);if(confirm('Replace all '+records.length+' records with '+next.length+' imported records? Export a backup first.')){if(persist(next))tell('Import complete.')}}catch(err){tell('Import failed: '+err.message)}finally{e.target.value=''}};
 render();
+// Public feed entries have stable IDs; local edits win when both versions change.
+const FEED_KEY='sg-job-search-feed-v1';
+async function syncFeed(){
+ try {
+  if(location.protocol==='file:') throw Error('Open the GitHub Pages site to sync.');
+  const response=await fetch('./jobs.json',{cache:'no-store'});
+  if(!response.ok) throw Error('Feed unavailable ('+response.status+').');
+  const data=await response.json();
+  if(data.schemaVersion!==1||!Array.isArray(data.records)) throw Error('Unsupported feed format.');
+  if(data.records.some(r=>!r.id || !r.id.startsWith('feed-'))) throw Error('Feed IDs must start with feed-.');
+  if(new Set(data.records.map(r=>r.id)).size!==data.records.length) throw Error('Duplicate feed IDs.');
+  const incoming=validate(data.records);
+  const previous=JSON.parse(localStorage.getItem(FEED_KEY)||'{}');
+  if(!previous || Array.isArray(previous) || typeof previous!=='object') throw Error('Saved feed state is invalid.');
+  const next=records.map(r=>({...r})); let added=0,updated=0;
+  for(const item of incoming){
+   const index=next.findIndex(r=>r.id===item.id), old=previous[item.id];
+   if(index<0){if(!old){next.push(item);added++} continue;}
+   // A locally deleted feed record stays deleted. Existing records without a
+   // previous feed snapshot are preserved during migration.
+   if(old){let changed=false;for(const f of fields){if(f!=='id' && next[index][f]===old[f] && item[f]!==old[f]){next[index][f]=item[f];changed=true}}if(changed)updated++;}
+  }
+  // Save records before the snapshot so a failed write never loses new entries.
+  localStorage.setItem(KEY,JSON.stringify(next)); records=next;
+  const snapshot={...previous};for(const item of incoming)snapshot[item.id]=item;
+  localStorage.setItem(FEED_KEY,JSON.stringify(snapshot));
+  render(); $('#syncNotice').textContent='Opportunity feed synced · '+added+' new, '+updated+' updated. Your edits stay on this browser.';
+ }catch(err){$('#syncNotice').textContent='Opportunity feed could not sync. Your saved records are still available. '+err.message;}
+}
+syncFeed();
 </script></body></html>
+
