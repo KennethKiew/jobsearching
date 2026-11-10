@@ -108,18 +108,9 @@
       "url": "https://job-boards.greenhouse.io/alphasense/jobs/8712167002",
       "notes": "Singapore. Separate role from existing Customer & Product Support record. Official application form visible on 10 Nov 2026. Account retention, onboarding and expansion with financial-services clients; Mandarin and English required. Stretch: seeks success managing financial-services/Fortune 1000 client relationships, SaaS experience and asks about selling into financial services. Salary and years of experience not stated.",
       "visaNotes": "Application form asks whether candidate needs visa sponsorship, but does not promise it or specify work pass type. Confirm with recruiter; employer has not confirmed sponsorship for this role."
-    },
-    {
-      "id": "feed-capitalgroup-jr7328",
-      "company": "Capital Group",
-      "role": "Associate Product Marketer",
-      "status": "Shortlisted — not applied",
-      "visa": "Employer confirmation pending",
-      "date": "",
-      "checked": "2026-11-10",
-      "url": "https://capgroup.wd1.myworkdayjobs.com/capitalgroupcareers/job/Associate-Product-Marketer_JR7328-1",
-      "notes": "Singapore; product positioning, campaign execution, content and stakeholder coordination; 1–3 years relevant experience, financial services exposure advantageous. Third-party listings indicate position exists, but Workday job could not be read on 10 Nov 2026; verify current vacancy. Salary undisclosed. Relocation assistance listed in The Muse's company benefits, not verified for this vacancy or Singapore employees; ask recruiter.",
-      "visaNotes": "The Muse lists work visa sponsorship as a company benefit, not a role-specific commitment. Employer sponsorship, pass type and overseas eligibility unconfirmed. Source: https://www.themuse.com/jobs/capitalgroup/associate-product-marketer"
     }
+  ],
+  "removedIds": [
+    "feed-capitalgroup-jr7328"
   ]
 }
