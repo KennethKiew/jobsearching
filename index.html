@@ -64,8 +64,11 @@ async function syncFeed(){
   const incoming=validate(data.records);
   const previous=JSON.parse(localStorage.getItem(FEED_KEY)||'{}');
   if(!previous || Array.isArray(previous) || typeof previous!=='object') throw Error('Saved feed state is invalid.');
-  const next=records.map(r=>({...r})); let added=0,updated=0;
+  if(data.removedIds!==undefined && (!Array.isArray(data.removedIds)||data.removedIds.some(id=>typeof id!=='string'||!id.startsWith('feed-')))) throw Error('Invalid removed IDs.');
+  const removed=new Set(data.removedIds||[]);
+  const next=records.filter(r=>!removed.has(r.id)).map(r=>({...r})); let added=0,updated=0;
   for(const item of incoming){
+   if(removed.has(item.id)) continue;
    const index=next.findIndex(r=>r.id===item.id), old=previous[item.id];
    if(index<0){if(!old){next.push(item);added++} continue;}
    // A locally deleted feed record stays deleted. Existing records without a
